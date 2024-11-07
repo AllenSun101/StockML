@@ -86,8 +86,8 @@ class IntradayOLSMRStrategy(Strategy):
         We use OLS for this, although ideally, we should use CADF.
         """
         # Obtain the latest window of values for each component of the pair of tickers
-        y = self.bars.get_latest_bars_values(self.pair[0], "close", N=self.ols_window)
-        x = self.bars.get_latest_bars_values(self.pair[1], "close", N=self.ols_window)
+        y = self.bars.get_latest_bars_values(self.pair[0], "Adj Close", N=self.ols_window)
+        x = self.bars.get_latest_bars_values(self.pair[1], "Adj Close", N=self.ols_window)
         
         if y is not None and x is not None:
             # Check that all window periods are available
@@ -117,8 +117,8 @@ if __name__ == "__main__":
     symbol_list = ['AAPL', 'GOOG']
     initial_capital = 100000.0
     heartbeat = 0.0
-    start_date = datetime.datetime(2007, 11, 8, 10, 41, 0)
-    end_date = datetime.datetime(2007, 11, 8, 10, 41, 0)
+    start_date = datetime.datetime(2024, 10, 8, 10, 41, 0)
+    end_date = datetime.datetime(2024, 10, 12, 10, 41, 0)
 
     backtest = Backtest(
         symbol_list, initial_capital, heartbeat,
