@@ -3,7 +3,8 @@ import datetime
 import os, os.path
 import numpy as np
 import pandas as pd
-from event import MarketEvent
+from event_driven_backtest.event import MarketEvent
+import yfinance as yf
 
 class DataHandler(object):
     """
@@ -66,27 +67,25 @@ class DataHandler(object):
 
 class HistoricCSVDataHandler(DataHandler):
     """
-    HistoricCSVDataHandler is designed to read CSV files for
-    each requested symbol from disk and provide an interface
+    HistoricCSVDataHandler is designed to fetch price data for
+    each requested symbol and provide an interface
     to obtain the "latest" bar in a manner identical to a live
     trading interface.
     """
-    def __init__(self, events, csv_dir, symbol_list):
+    def __init__(self, events, symbol_list, start, end):
         """
         Initialises the historic data handler by requesting
-        the location of the CSV files and a list of symbols.
-        It will be assumed that all files are of the form
-        'symbol.csv', where symbol is a string in the list.
+        a list of symbols.
         Parameters:
         events - The Event Queue.
-        csv_dir - Absolute directory path to the CSV files.
         symbol_list - A list of symbol strings.
         """
         self.events = events
-        self.csv_dir = csv_dir
         self.symbol_list = symbol_list
         self.symbol_data = {}
         self.latest_symbol_data = {}
+        self.start = start
+        self.end = end
         self.continue_backtest = True
         self._open_convert_csv_files()
 
@@ -99,19 +98,22 @@ class HistoricCSVDataHandler(DataHandler):
         """
         comb_index = None
         for s in self.symbol_list:
-            # Load the CSV file with no header information, indexed on date
-            self.symbol_data[s] = pd.io.parsers.read_csv(os.path.join(self.csv_dir, '%s.csv' % s),
-            header=0, index_col=0, parse_dates=True, names=['datetime', 'open', 'high', 'low', 'close', 'volume', 'adj_close']).sort()
-            # Combine the index to pad forward values
+            # Download data from Yahoo Finance
+            symbol_data = yf.download(s, start=self.start, end=self.end)
+            
+            # Store the data in the symbol_data dictionary
+            self.symbol_data[s] = symbol_data.sort_index()
+            
+            # Combine the index to create a consistent date range for reindexing
             if comb_index is None:
                 comb_index = self.symbol_data[s].index
             else:
-                comb_index.union(self.symbol_data[s].index)
+                comb_index = comb_index.union(self.symbol_data[s].index)
 
-            # Set the latest symbol_data to None
+            # Initialize the latest_symbol_data for each symbol
             self.latest_symbol_data[s] = []
-            
-        # Reindex the dataframes
+
+        # Reindex each symbol's DataFrame using the combined index with forward fill
         for s in self.symbol_list:
             self.symbol_data[s] = self.symbol_data[s].reindex(index=comb_index, method='pad').iterrows()
         

@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import datetime
 import queue
-from event import FillEvent, OrderEvent
+from event_driven_backtest.event import FillEvent, OrderEvent
 
 class ExecutionHandler(object):
     """
@@ -46,7 +46,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
         Parameters:
         events - The Queue of Event objects.
         """
-        self.events=events
+        self.events = events
 
     def execute_order(self,event):
         """

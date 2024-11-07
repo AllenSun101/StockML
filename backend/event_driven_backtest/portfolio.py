@@ -3,8 +3,8 @@ from math import floor
 import queue
 import numpy as np
 import pandas as pd
-from event import FillEvent, OrderEvent
-from performance import create_sharpe_ratio, create_drawdowns
+from event_driven_backtest.event import FillEvent, OrderEvent
+from event_driven_backtest.performance import create_sharpe_ratio, create_drawdowns
 
 class Portfolio(object):
     """
@@ -97,18 +97,20 @@ class Portfolio(object):
 
         # Update holdings
         # ===============
-        dh=dict((k, v) for k, v in[(s, 0) for s in self.symbol_list])
+        dh = dict((k, v) for k, v in[(s, 0) for s in self.symbol_list])
         dh['datetime'] = latest_datetime
         dh['cash'] = self.current_holdings['cash']
         dh['commission'] = self.current_holdings['commission']
         dh['total'] = self.current_holdings['cash']
+        
         for s in self.symbol_list:
             # Approximation to the real value
-            market_value = self.current_positions[s] * self.bars.get_latest_bar_value(s, "adj_close")
+            market_value = self.current_positions[s] * self.bars.get_latest_bar_value(s, "Adj Close")
             dh[s] = market_value
             dh['total'] += market_value
-            # Append the current holdings
-            self.all_holdings.append(dh)
+
+        # Append the current holdings
+        self.all_holdings.append(dh)
 
     def update_positions_from_fill(self, fill):
         """
@@ -144,7 +146,7 @@ class Portfolio(object):
             fill_dir = -1
 
         # Update holdings list with new quantities
-        fill_cost = self.bars.get_latest_bar_value(fill.symbol, "adj_close")
+        fill_cost = self.bars.get_latest_bar_value(fill.symbol, "Adj Close")
         cost = fill_dir * fill_cost * fill.quantity
         self.current_holdings[fill.symbol] += cost
         self.current_holdings['commission'] += fill.commission
@@ -170,12 +172,15 @@ class Portfolio(object):
         signal - The tuple containing Signal information.
         """
         order = None
+        
         symbol = signal.symbol
         direction = signal.signal_type
         strength = signal.strength
+        
         mkt_quantity = 100
         cur_quantity = self.current_positions[symbol]
         order_type = 'MKT'
+        
         if direction == 'LONG' and cur_quantity == 0:
             order = OrderEvent(symbol, order_type, mkt_quantity, 'BUY')
         if direction == 'SHORT' and cur_quantity == 0:
@@ -184,6 +189,7 @@ class Portfolio(object):
             order = OrderEvent(symbol, order_type, abs(cur_quantity), 'SELL')
         if direction == 'EXIT' and cur_quantity < 0:
             order = OrderEvent(symbol, order_type, abs(cur_quantity), 'BUY')
+        
         return order
 
     def update_signal(self, event):
@@ -213,9 +219,11 @@ class Portfolio(object):
         total_return = self.equity_curve['equity_curve'][-1]
         returns = self.equity_curve['returns']
         pnl = self.equity_curve['equity_curve']
+        
         sharpe_ratio = create_sharpe_ratio(returns, periods=252*60*6.5)
         drawdown, max_dd, dd_duration = create_drawdowns(pnl)
         self.equity_curve['drawdown'] = drawdown
+        
         stats = [("Total Return", "%0.2f%%" % ((total_return - 1.0) * 100.0)),
                  ("Sharpe Ratio","%0.2f" % sharpe_ratio),
                  ("Max Drawdown","%0.2f%%" % (max_dd * 100.0)),

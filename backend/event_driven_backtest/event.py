@@ -52,7 +52,6 @@ class OrderEvent(Event):
     """
     Handles the event of sending an Order to an execution system.
     The order contains a symbol (e.g. GOOG), a type (market or limit),
-    133
     quantity and a direction.
     """
 

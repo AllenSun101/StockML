@@ -3,7 +3,7 @@ import datetime
 import queue
 import numpy as np
 import pandas as pd
-from event import SignalEvent
+from event_driven_backtest.event import SignalEvent
 
 class Strategy(object):
     """
