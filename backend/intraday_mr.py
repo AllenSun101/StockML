@@ -34,7 +34,7 @@ class IntradayOLSMRStrategy(Strategy):
         self.zscore_low = zscore_low
         self.zscore_high = zscore_high
         self.pair = ('AAPL', 'GOOG')
-        self.datetime = datetime.datetime.utcnow()
+        self.datetime = datetime.datetime.now(datetime.timezone.utc)
         self.long_market = False
         self.short_market = False
 
