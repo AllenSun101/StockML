@@ -2,7 +2,6 @@ import os.path
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import pytz
 
 if __name__ == "__main__":
     # Load the data from CSV file

@@ -4,10 +4,11 @@ import pandas as pd
 import statsmodels.api as sm
 from event_driven_backtest.strategy import Strategy
 from event_driven_backtest.event import SignalEvent
-from event_driven_backtest.backtest import Backtest
+from event_driven_backtest.multi_backtest import MultiBacktest
 from event_driven_backtest.hft_data import HistoricCSVDataHandlerHFT
 from event_driven_backtest.hft_portfolio import PortfolioHFT
 from event_driven_backtest.execution import SimulatedExecutionHandler
+from itertools import product
 
 class IntradayOLSMRStrategy(Strategy):
     """
@@ -118,12 +119,28 @@ if __name__ == "__main__":
     initial_capital = 100000.0
     heartbeat = 0.0
     start_date = datetime.datetime(2024, 10, 8, 10, 41, 0)
-    end_date = datetime.datetime(2024, 10, 12, 10, 41, 0)
+    end_date = datetime.datetime(2024, 10, 16, 10, 41, 0)
 
-    backtest = Backtest(
+    # Create the strategy parameter grid
+    # using the itertools Cartesian product generator
+    strat_lookback = [50, 100, 200]
+    strat_z_entry = [2.0, 7.0, 9.0]
+    strat_z_exit = [0.5, 1.0, 1.5]
+
+    # Create a list of parameter combinations
+    strat_params_list = list(product(strat_lookback, strat_z_entry, strat_z_exit))
+
+    # Create a list of dictionaries with the correct keyword/value pairs for the strategy parameters
+    strat_params_dict_list = [
+        dict(ols_window=sp[0], zscore_high=sp[1], zscore_low=sp[2])
+        for sp in strat_params_list
+    ]
+
+    # Carry out the set of backtests for all parameter combinations
+    backtest = MultiBacktest(
         symbol_list, initial_capital, heartbeat,
         start_date, end_date, HistoricCSVDataHandlerHFT, SimulatedExecutionHandler,
-        PortfolioHFT, IntradayOLSMRStrategy
+        PortfolioHFT, IntradayOLSMRStrategy, strat_params_list=strat_params_dict_list
     )
     
     backtest.simulate_trading()
